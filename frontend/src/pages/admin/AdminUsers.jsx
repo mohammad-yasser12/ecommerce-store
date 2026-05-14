@@ -12,20 +12,25 @@ function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState(null);
 const [showModal, setShowModal] = useState(false);
 const [search, setSearch] = useState("");
+const [currentPage, setCurrentPage] = useState(1);
+const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
 
+  const showPrev = currentPage > 1;
+const showNext = currentPage < totalPages;
+
   // 🔥 Fetch users
- const fetchUsers = async () => {
+const fetchUsers = async (page = 1) => {
   try {
-    const res = await API.get("/users");
+    const res = await API.get(`/users?page=${page}&limit=10`);
 
-    const data = res.data;
+    setUsers(res.data.users || []);
+    setTotalPages(res.data.pages || 1);
+    setCurrentPage(page);
 
-    // ✅ handle both API formats safely
-    setUsers(Array.isArray(data) ? data : data.users || []);
   } catch (err) {
     console.log("Error fetching users", err);
-    setUsers([]); // fallback safety
+    setUsers([]);
   }
 };
 
@@ -61,6 +66,9 @@ const filteredUsers = users.filter((user) =>
   useEffect(() => {
     fetchUsers();
   }, []);
+  useEffect(() => {
+  fetchUsers(currentPage);
+}, [currentPage]);
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -143,6 +151,26 @@ const filteredUsers = users.filter((user) =>
     </tbody>
 
   </table>
+ 
+</div>
+<div className="flex justify-center gap-2 mt-4">
+
+  {showPrev && (
+    <button onClick={() => setCurrentPage(currentPage - 1)}>
+      Prev
+    </button>
+  )}
+
+  <span className="px-3 py-1 bg-blue-500 text-white rounded">
+    {currentPage}
+  </span>
+
+  {showNext && (
+    <button onClick={() => setCurrentPage(currentPage + 1)}>
+      Next
+    </button>
+  )}
+
 </div>
       {showModal && selectedUser && (
   <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">

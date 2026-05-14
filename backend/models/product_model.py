@@ -2,11 +2,12 @@ from config.db import db
 
 products_collection = db["products"]
 
+# ✅ CREATE PRODUCT
 def create_product(data):
     return products_collection.insert_one(data)
 
-# ✅ FIXED FUNCTION
-def get_products(sort_query=None):
+# ✅ GET PRODUCTS
+def get_products(query={}, sort_query=None):
     if sort_query:
-        return list(products_collection.find().sort(sort_query))
-    return list(products_collection.find())
+        return list(products_collection.find(query).sort(sort_query))
+    return list(products_collection.find(query))

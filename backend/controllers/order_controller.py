@@ -2,6 +2,9 @@ from flask import request, jsonify
 from models.order_model import create_order, get_orders_by_user
 from flask_jwt_extended import get_jwt_identity
 from config.db import orders_collection
+from flask import jsonify, request
+from math import ceil
+
 
 # ✅ CREATE ORDER
 from flask import request, jsonify
@@ -58,6 +61,8 @@ def get_orders_controller():
 
 # controllers/order_controller.py
 
+
+
 def get_all_orders_controller():
     try:
         user_id = request.args.get("user_id")
@@ -66,35 +71,45 @@ def get_all_orders_controller():
         max_price = request.args.get("maxPrice")
         sort = request.args.get("sort")
 
+        page = int(request.args.get("page", 1))
+        limit = int(request.args.get("limit", 10))
+        skip = (page - 1) * limit
+
         query = {}
 
+        # USER FILTER
         if user_id:
             query["user_id"] = user_id
 
+        # PRICE FILTER
         if min_price or max_price:
             query["total"] = {}
-
             if min_price:
                 query["total"]["$gte"] = float(min_price)
-
             if max_price:
                 query["total"]["$lte"] = float(max_price)
 
-        # 🔥 SEARCH (simple version)
+        # SEARCH
         if search:
             query["user_id"] = {"$regex": search, "$options": "i"}
 
+        # SORT
         sort_query = None
-
         if sort == "total_asc":
             sort_query = [("total", 1)]
         elif sort == "total_desc":
             sort_query = [("total", -1)]
 
+        # TOTAL COUNT (IMPORTANT FOR PAGINATION)
+        total = orders_collection.count_documents(query)
+
         cursor = orders_collection.find(query)
 
         if sort_query:
             cursor = cursor.sort(sort_query)
+
+        # PAGINATION APPLY
+        cursor = cursor.skip(skip).limit(limit)
 
         orders = list(cursor)
 
@@ -102,7 +117,12 @@ def get_all_orders_controller():
             order["_id"] = str(order["_id"])
             order["user_id"] = str(order.get("user_id", "N/A"))
 
-        return jsonify(orders), 200
+        return jsonify({
+            "orders": orders,
+            "page": page,
+            "pages": ceil(total / limit) if limit else 1,
+            "total": total
+        }), 200
 
     except Exception as e:
         print("🔥 ERROR:", e)

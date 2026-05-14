@@ -91,7 +91,7 @@ const handleRemove = async (id) => {
 
             {/* 🔙 Back */}
             <button
-                onClick={() => navigate("/products")}
+                onClick={() => navigate("/user_dashboard")}
                 className="mb-4 text-blue-500 hover:underline"
             >
                 ← Back to Products

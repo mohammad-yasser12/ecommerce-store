@@ -1,6 +1,7 @@
 import { FiLogOut } from "react-icons/fi";
 import { MdDashboard } from "react-icons/md";
 import { FaBox, FaUsers, FaShoppingCart } from "react-icons/fa";
+import { FaTag } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import { logout } from "../../redux/authSlice";
 import { useState, useEffect } from "react";
@@ -14,14 +15,16 @@ function AdminDashboard() {
   const [showModal, setShowModal] = useState(false);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
+  const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [image, setImage] = useState(null);
   const [products, setProducts] = useState([]);
   const [users, setUsers] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [brand, setBrand] = useState("");
   const [wishlistStats, setWishlistStats] = useState([]);
-
-
+const [totalUsers, setTotalUsers] = useState(0);
+const [totalOrders, setTotalOrders] = useState(0);
   const fetchProducts = async () => {
     try {
       const response = await API.get("/products");
@@ -38,6 +41,7 @@ const fetchUsers = async () => {
 
     // ✅ handle both API formats safely
     setUsers(Array.isArray(data) ? data : data.users || []);
+       setTotalUsers(res.data.total); 
   } catch (err) {
     console.log("Error fetching users", err);
     setUsers([]); // fallback safety
@@ -55,6 +59,7 @@ const fetchUsers = async () => {
     });
 
     setOrders(res.data);
+    setTotalOrders(res.data.total || 0);
   } catch (err) {
     console.log(err);
   }
@@ -92,7 +97,9 @@ useEffect(() => {
     formData.append("name", name);
     formData.append("price", price);
     formData.append("description", description);
+    formData.append("category", category);
     formData.append("image", image);
+    formData.append("brand", brand);
 
     try {
       await API.post("/product", formData, {
@@ -160,6 +167,12 @@ useEffect(() => {
   >
     <FaPlus className="text-sm" />
   </button>
+  <button
+    onClick={() => navigate("/admin/promotions")}
+    className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg shadow-md transform hover:-translate-y-1 hover:scale-105 hover:bg-green-600 hover:shadow-xl transition-all duration-300 cursor-pointer"
+  >
+    <FaTag className="text-sm" />
+  </button>
 
   <button
     onClick={() => dispatch(logout())}
@@ -191,6 +204,14 @@ useEffect(() => {
                   type="file"
                   onChange={(e) => setImage(e.target.files[0])}
                 />
+                
+                <input
+  type="text"
+  placeholder="Brand"
+  value={brand}
+  onChange={(e) => setBrand(e.target.value)}
+  className="border p-2 rounded"
+/> 
 
                 <input
                   type="number"
@@ -203,6 +224,12 @@ useEffect(() => {
                   placeholder="Description"
                   className="p-2 border rounded"
                   onChange={(e) => setDescription(e.target.value)}
+                />
+                <input
+                  type="text"
+                  placeholder="Category"
+                  className="p-2 border rounded"
+                  onChange={(e) => setCategory(e.target.value)}
                 />
 
                 {/* Buttons */}
@@ -247,7 +274,7 @@ useEffect(() => {
     onClick={() => navigate("/admin/orders")}
    className="bg-white p-5 rounded-xl shadow transform hover:-translate-y-2 hover:shadow-2xl hover:bg-gray-100 transition-all duration-300 cursor-pointer">
     <h2 className="text-gray-500">Total Orders</h2>
-    <p className="text-2xl font-bold">{orders.length}</p>
+    <p className="text-2xl font-bold">{totalOrders}</p>
   </div>
 
   <div
@@ -256,7 +283,7 @@ useEffect(() => {
   >
     <h2 className="text-gray-500">Users</h2>
     <p className="text-2xl font-bold">
-      {users.filter(user => user.role === "user").length}
+       {totalUsers}
     </p>
   </div>
 

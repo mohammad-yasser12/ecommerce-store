@@ -1,25 +1,20 @@
+from functools import wraps
 from flask import jsonify
-from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
-from flask_jwt_extended import verify_jwt_in_request, get_jwt
-
-# ✅ Check if user is logged in
-def auth_required():
-    try:
-        verify_jwt_in_request()  # checks token
-    except Exception as e:
-        return jsonify({"message": "Unauthorized"}), 401
+from flask_jwt_extended import verify_jwt_in_request
 
 
-# ✅ Check if user is admin
+def auth_required(fn):
 
-def admin_required():
-    try:
-        verify_jwt_in_request()
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
 
-        claims = get_jwt()   # ✅ CORRECT
+        try:
+            verify_jwt_in_request()
+            return fn(*args, **kwargs)
 
-        if claims.get("role") != "admin":
-            return jsonify({"message": "Admin access only"}), 403
+        except:
+            return jsonify({
+                "message": "Unauthorized"
+            }), 401
 
-    except Exception as e:
-        return jsonify({"message": "Unauthorized"}), 401
+    return wrapper

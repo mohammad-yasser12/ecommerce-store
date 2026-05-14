@@ -8,4 +8,4 @@ products_collection = db["products"]
 orders_collection = db["orders"]
 cart_collection = db["cart"]
 wishlist_collection = db["wishlist"]
-
+promotions_collection = db["promotions"]

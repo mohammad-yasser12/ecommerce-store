@@ -3,6 +3,9 @@ from models.user_model import create_user, get_users, get_normal_users, users_co
 from bson import ObjectId
 
 
+from config.db import users_collection
+
+
 def create_user_controller():
     data = request.json
 
@@ -14,14 +17,51 @@ def create_user_controller():
     return jsonify({"message": "User created successfully"}), 201
 
 
+
+
+
+from flask import request, jsonify
+from config.db import users_collection
+
 def get_users_controller():
-    users = get_normal_users()   # OR get_users()
 
-    for user in users:
-        user["_id"] = str(user["_id"])
+    try:
+        page = int(request.args.get("page", 1))
+        limit = int(request.args.get("limit", 10))
 
-    return jsonify(users), 200
+        skip = (page - 1) * limit
 
+        # ✅ ONLY USERS (NOT ADMINS)
+        query = {"role": "user"}
+
+        cursor = users_collection.find(query).skip(skip).limit(limit)
+
+        users = []
+
+        for u in cursor:
+            users.append({
+                "_id": str(u["_id"]),
+                "username": u.get("username"),
+                "email": u.get("email"),
+                "role": u.get("role"),
+                "isBlocked": u.get("isBlocked", False)
+            })
+
+        total = users_collection.count_documents(query)
+
+        return jsonify({
+            "users": users,
+            "total": total,
+            "page": page,
+            "pages": (total // limit) + (1 if total % limit else 0)
+        })
+
+    except Exception as e:
+        print("🔥 USERS ERROR:", e)
+        return jsonify({
+            "message": "Server error",
+            "error": str(e)
+        }), 500
 
 def delete_user_controller(id):
 

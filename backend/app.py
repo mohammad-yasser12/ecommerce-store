@@ -6,6 +6,9 @@ from routes.cart_routes import cart_routes
 from routes.wishlist_routes import wishlist_routes
 from routes.admin_routes import admin_routes
 from routes.payment_routes import payment_routes
+from routes.promotion_routes import promotion_routes
+
+
 
 from flask_cors import CORS
 import os
@@ -48,6 +51,7 @@ app.register_blueprint(order_routes, url_prefix="/api")
 app.register_blueprint(cart_routes, url_prefix="/api")
 app.register_blueprint(wishlist_routes, url_prefix="/api")
 app.register_blueprint(admin_routes, url_prefix="/api")
+app.register_blueprint(promotion_routes, url_prefix="/api")
 
 
 app.register_blueprint(payment_routes, url_prefix="/api")

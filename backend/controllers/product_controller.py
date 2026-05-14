@@ -3,28 +3,44 @@ import time
 from flask import request, jsonify, current_app
 from werkzeug.utils import secure_filename
 from models.product_model import create_product, get_products
-
+from config.db import products_collection
+from config.db import promotions_collection
 
 # ✅ GET PRODUCTS
 
 
+
+
 def get_products_controller():
     try:
+        search = request.args.get("search")
+        category = request.args.get("category")
         sort = request.args.get("sort")
 
-        # default no sorting
+        query = {}
+
+        # 🔍 SEARCH (name + brand)
+        if search:
+            query["$or"] = [
+                {"name": {"$regex": search, "$options": "i"}},
+                {"brand": {"$regex": search, "$options": "i"}}
+            ]
+
+        # 📦 CATEGORY FILTER
+        if category:
+            query["category"] = category
+
+        # 📊 SORT
         sort_query = None
 
-        # 👉 price ascending
         if sort == "price_asc":
             sort_query = [("price", 1)]
 
-        # 👉 price descending
         elif sort == "price_desc":
             sort_query = [("price", -1)]
 
-        # fetch products
-        products = get_products(sort_query)
+        # 🔥 FETCH
+        products = get_products(query, sort_query)
 
         for product in products:
             product["_id"] = str(product["_id"])
@@ -33,12 +49,15 @@ def get_products_controller():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
+    
 
 # ✅ CREATE PRODUCT
 def create_product_controller():
+
     name = request.form.get("name")
     price = request.form.get("price")
+    category = request.form.get("category")
+    brand = request.form.get("brand")   # ✅ NEW FIELD
     description = request.form.get("description")
     file = request.files.get("image")
 
@@ -61,9 +80,47 @@ def create_product_controller():
     create_product({
         "name": name,
         "price": price,
+        "category": category,
+        "brand": brand,   # ✅ SAVE BRAND
         "description": description,
         "image": image_path
     })
 
     return jsonify({"message": "Product created"}), 201
 
+# ✅ GET UNIQUE CATEGORIES
+def get_categories_controller():
+    try:
+        categories = products_collection.distinct("category")
+
+        clean = set()
+
+        for c in categories:
+            if c:
+                clean.add(c.strip().lower())   # remove spaces + normalize
+
+        return jsonify(list(clean)), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+
+
+def apply_promotion(product):
+
+    product["final_price"] = product["price"]
+
+    promo = promotions_collection.find_one({
+        "product_id": str(product["_id"]),
+        "is_active": True
+    })
+
+    if promo:
+        if promo["type"] == "percentage":
+            discount = product["price"] * promo["value"] / 100
+            product["final_price"] = round(product["price"] - discount, 2)
+
+        elif promo["type"] == "fixed":
+            product["final_price"] = product["price"] - promo["value"]
+
+    return product

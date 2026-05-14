@@ -20,7 +20,16 @@ function Products() {
 
   const [products, setProducts] = useState([]);
   const [wishlist, setWishlist] = useState([]);
+  const [search, setSearch] = useState("");
+const [category, setCategory] = useState("");
+const [categories, setCategories] = useState([]);
+const [promotions, setPromotions] = useState([]);
+const [sort, setSort] = useState("");
+const [zoomImage, setZoomImage] = useState(null);
   const cartItems = useSelector((state) => state.cart.cartItems);
+      const uniqueCategories = [...new Set(categories)];
+
+
 
   const wishlistItems = useSelector(
     (state) => state.wishlist.items
@@ -29,7 +38,9 @@ function Products() {
   // 🔥 Fetch products
   const fetchProducts = async () => {
     try {
-      const res = await API.get("/products");
+     const res = await API.get(
+  `/products?search=${search}&category=${category}&sort=${sort}`
+);
       setProducts(res.data);
     } catch (err) {
       console.log(err);
@@ -129,13 +140,34 @@ const fetchWishlist = async () => {
   }
 };
 
+const fetchCategories = async () => {
+
+  try {
+
+    const res = await API.get("/products/categories");
+
+    setCategories(res.data);
+    console.log("CATEGORIES FROM API:", res.data);
+
+  } catch (err) {
+    console.log(err);
+  }
+};
+
 
 
   useEffect(() => {
     fetchProducts();
     fetchWishlist();
+     fetchCategories();
     fetchCart();
-  }, []);
+  }, [search, category, sort]);
+
+  useEffect(() => {
+  API.get("/promotions")
+    .then(res => setPromotions(res.data))
+    .catch(err => console.log(err));
+}, []);
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -150,6 +182,59 @@ const fetchWishlist = async () => {
 
       {/* Title */}
       <h1 className="text-2xl font-bold mb-6">Products</h1>
+  {promotions.map((p) => (
+  <div key={p._id} className="bg-yellow-100 p-4 rounded mb-3">
+    <h2 className="font-bold">{p.title}</h2>
+    <p>{p.value}% OFF</p>
+
+    <button  
+      onClick={() => navigate("/offers")}
+    className="mt-2 bg-black text-white px-3 py-1 rounded">
+      Shop Now
+    </button>
+  </div>
+))}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+
+  {/* SEARCH */}
+  <input
+    type="text"
+    placeholder="Search by brand or product..."
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+    className="border p-3 rounded-lg w-full"
+  />
+
+  {/* CATEGORY */}
+  <select
+  value={category}
+  onChange={(e) => setCategory(e.target.value)}
+  className="border p-3 rounded-lg"
+>
+
+  <option value="">All Categories</option>
+
+ {uniqueCategories.map((cat, index) => (
+  <option key={index} value={cat}>
+    {cat}
+  </option>
+))}
+
+</select>
+  {/* SORT */}
+ <select
+  value={sort}
+  onChange={(e) => setSort(e.target.value)}
+  className="border p-3 rounded-lg"
+>
+  <option value="">Sort</option>
+
+  <option value="price_asc">Price: Low → High</option>
+  <option value="price_desc">Price: High → Low</option>
+
+</select>
+
+</div>
 
       {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -168,16 +253,21 @@ const isInCart = cartItems.some(
       key={product._id}
       className="bg-white rounded-xl shadow p-4"
     >
-
-      <img
-        src={`http://localhost:5000${product.image}`}
-        alt={product.name}
-        className="h-40 w-full object-cover rounded-lg mb-3"
-      />
-
-      <h2 className="font-semibold text-lg">
+       
+  <h2 className="font-semibold text-lg">
         {product.name}
       </h2>
+     <img
+  src={`http://localhost:5000${product.image}`}
+  alt={product.name}
+onClick={() => setZoomImage(product)}
+  className="h-40 w-full object-cover rounded-lg mb-3 cursor-pointer hover:scale-105 transition"
+/>
+
+  <h2 className="font-semibold text-lg">
+        {product.brand}
+      </h2>
+    
 
       <p className="text-gray-500 mb-2">
         ₹ {product.price}
@@ -215,6 +305,18 @@ const isInCart = cartItems.some(
     </div>
   );
 })}
+{zoomImage && (
+  <div
+    onClick={() => setZoomImage(null)}
+    className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+  >
+    <img
+      src={`http://localhost:5000${zoomImage.image}`}
+      alt={zoomImage.name}
+      className="max-w-[90%] max-h-[90%] rounded-2xl animate-zoomIn"
+    />
+  </div>
+)}
 
       </div>
     </div>

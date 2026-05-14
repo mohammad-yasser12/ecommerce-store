@@ -8,7 +8,6 @@ from config.db import users_collection, products_collection, wishlist_collection
 
 
 
-
 def get_wishlist_controller():
     try:
         user_id = get_jwt_identity()
@@ -19,34 +18,41 @@ def get_wishlist_controller():
 
         for item in wishlist:
 
-            # 🔥 SAFE CHECK (THIS FIXES YOUR ERROR)
-            if "product_id" not in item:
+            product_id = item.get("product_id")
+
+            if not product_id:
                 continue
 
             product = None
 
             try:
-                product = products_collection.find_one({
-                    "_id": ObjectId(item["product_id"])
-                })
+                # 🔥 TRY ObjectId first
+                product = products_collection.find_one(
+                    {"_id": ObjectId(product_id)},
+                    {"name": 1, "price": 1, "image": 1}
+                )
             except:
-                product = None
+                # 🔥 fallback if _id is string
+                product = products_collection.find_one(
+                    {"_id": product_id},
+                    {"name": 1, "price": 1, "image": 1}
+                )
 
             result.append({
-                "_id": str(item["_id"]),
-                "product": {
-                    "id": str(item.get("product_id")),
-                    "name": product["name"] if product else "Unknown"
-                }
-            })
+    "_id": str(item["_id"]),
+    "product": {
+        "id": str(product_id),
+        "name": product.get("name") if product else "Unknown",
+        "price": product.get("price", 0) if product else 0,
+        "image": product.get("image", "") if product else ""
+    }
+})
 
         return jsonify(result), 200
 
     except Exception as e:
         print("WISHLIST ERROR:", e)
         return jsonify({"error": str(e)}), 500
-    
-
 # 🔥 ADD
 def add_to_wishlist_controller():
     try:
@@ -89,15 +95,20 @@ def add_to_wishlist_controller():
 
 
 # 🔥 REMOVE
-def remove_from_wishlist_controller():
-    user_id = get_jwt_identity()
-    data = request.json
 
-    product_id = data.get("product_id")
+def remove_from_wishlist_controller(product_id):
+    try:
+        user_id = get_jwt_identity()
 
-    remove_from_wishlist(user_id, product_id)
+        wishlist_collection.delete_one({
+            "user_id": str(user_id),
+            "product_id": str(product_id)
+        })
 
-    return jsonify({"msg": "removed"}), 200
+        return jsonify({"msg": "removed"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 def get_all_wishlist_controller():
     try:

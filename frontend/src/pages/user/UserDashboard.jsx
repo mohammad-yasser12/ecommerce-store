@@ -5,6 +5,7 @@ import { MdDashboard } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useState,useEffect } from "react";
+import { Home } from "lucide-react";
 import API from "../../api/axios";
 
 function UserDashboard() {
@@ -73,13 +74,26 @@ useEffect(() => {
         </div>
 
         {/* Right */}
-       <button
-  onClick={handleLogout}
-  className="p-2 rounded-full hover:bg-red-100 cursor-pointer"
-  title="Logout"
->
-  <FiLogOut className="text-red-500 text-xl" />
-</button>
+
+       <div className="flex items-center gap-3">
+
+  <button
+    onClick={() => navigate("/home")}
+    className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100"
+  >
+    <Home size={20} />
+    Home
+  </button>
+
+  <button
+    onClick={handleLogout}
+    className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-100 text-red-500"
+    title="Logout"
+  >
+    <FiLogOut className="text-xl" />
+  </button>
+
+</div>
       </div>
 
       {/* Content */}
@@ -91,7 +105,9 @@ useEffect(() => {
       <div className="grid grid-cols-2 gap-6">
 
   {/* ORDERS CARD */}
-  <div className="bg-white p-5 rounded-xl shadow 
+  <div 
+  onClick={() => navigate("/orders")}
+  className="bg-white p-5 rounded-xl shadow 
     transform transition-all duration-300 ease-out
     hover:-translate-y-2 hover:scale-105 hover:shadow-2xl hover:z-10">
     
@@ -100,7 +116,9 @@ useEffect(() => {
   </div>
 
   {/* WISHLIST CARD */}
-  <div className="bg-white p-5 rounded-xl shadow 
+  <div 
+  onClick={() => navigate("/wishlist")}
+  className="bg-white p-5 rounded-xl shadow 
     transform transition-all duration-300 ease-out
     hover:-translate-y-2 hover:scale-105 hover:shadow-2xl hover:z-10">
 

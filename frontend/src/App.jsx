@@ -13,6 +13,11 @@ import Checkout from "./pages/user/Checkout";
 import Orders from "./pages/user/Orders";
 import AdminOrders from "./pages/admin/AdminOrders";
 import WishlistAnalytics from "./pages/admin/WishlistAnalytics";
+import AdminPromotions from "./pages/admin/AdminPromotions";
+import Offers from "./pages/user/Offers";
+import UserWishlists from "./pages/user/UserWhishlists";
+import UserHome from "./pages/user/UserHome";
+import LandingPage from "./pages/user/LandingPage";
 
 
 
@@ -24,7 +29,7 @@ function App() {
      <Routes>
 
   {/* Default */}
-  <Route path="/" element={<Navigate to="/login" />} />
+<Route path="/" element={<LandingPage />} />
 
   {/* Public */}
   <Route path="/login" element={<Login />} />
@@ -34,6 +39,11 @@ function App() {
   <Route path="/checkout" element={<Checkout />} />
   <Route path="/orders" element={<Orders />} />
   <Route path="/admin/orders" element={<AdminOrders />} />
+  <Route path="/admin/promotions" element={<AdminPromotions />} />
+  <Route path="/offers" element={<Offers />} />
+  <Route path="/wishlist" element={<UserWishlists />} />
+  <Route path="/home" element={<UserHome />} /> 
+  <Route path="/" element={<LandingPage />} />
 <Route
   path="/admin/wishlist-stats"
   element={
