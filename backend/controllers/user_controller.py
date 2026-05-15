@@ -22,17 +22,38 @@ def create_user_controller():
 
 from flask import request, jsonify
 from config.db import users_collection
+import re
 
 def get_users_controller():
 
     try:
         page = int(request.args.get("page", 1))
         limit = int(request.args.get("limit", 10))
+        search = request.args.get("search", "")
 
         skip = (page - 1) * limit
 
-        # ✅ ONLY USERS (NOT ADMINS)
-        query = {"role": "user"}
+        # BASE QUERY
+        query = {
+            "role": "user"
+        }
+
+        # SEARCH FILTER
+        if search:
+            query["$or"] = [
+                {
+                    "username": {
+                        "$regex": search,
+                        "$options": "i"
+                    }
+                },
+                {
+                    "email": {
+                        "$regex": search,
+                        "$options": "i"
+                    }
+                }
+            ]
 
         cursor = users_collection.find(query).skip(skip).limit(limit)
 
@@ -58,6 +79,7 @@ def get_users_controller():
 
     except Exception as e:
         print("🔥 USERS ERROR:", e)
+
         return jsonify({
             "message": "Server error",
             "error": str(e)

@@ -63,12 +63,12 @@ const filteredUsers = users.filter((user) =>
   user.email.toLowerCase().includes(search.toLowerCase())
 );
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  // useEffect(() => {
+  //   fetchUsers();
+  // }, []);
   useEffect(() => {
   fetchUsers(currentPage);
-}, [currentPage]);
+}, [currentPage,search]);
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">

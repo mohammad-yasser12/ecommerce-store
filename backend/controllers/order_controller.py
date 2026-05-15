@@ -7,44 +7,139 @@ from math import ceil
 
 
 # ✅ CREATE ORDER
+
+
+
 from flask import request, jsonify
-from flask_jwt_extended import get_jwt_identity
+
+from datetime import datetime
+
+
+
+from config.razorpay_config import client
+from models.order_model import create_order, get_orders_by_user
+
+
+def get_paid_orders():
+    orders = list(
+        orders_collection.find({"status": "paid"}).sort("created_at", -1)
+    )
+
+    for o in orders:
+        o["_id"] = str(o["_id"])
+
+    return jsonify(orders), 200
+
+
+
+# def create_razorpay_order():
+#     try:
+#         user_id = get_jwt_identity()
+#         data = request.json
+
+#         items = data.get("items", [])
+#         total = data.get("total")
+
+#         if not items or total is None:
+#             return jsonify({"message": "Invalid data"}), 400
+
+#         # Create Razorpay order
+#         razorpay_order = client.order.create({
+#             "amount": int(total) * 100,
+#             "currency": "INR",
+#             "payment_capture": 1
+#         })
+
+#         # Save in DB
+#         order_data = {
+#             "user_id": user_id,
+#             "items": items,
+#             "total": total,
+#             "status": "pending",
+#             "razorpay_order_id": razorpay_order["id"],
+#             "created_at": datetime.utcnow()
+#         }
+
+#         db_result = orders_collection.insert_one(order_data)
+
+#         return jsonify({
+#             "order_id": razorpay_order["id"],
+#             "db_id": str(db_result.inserted_id),
+#             "amount": razorpay_order["amount"]
+#         }), 200
+
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
 
 def create_order_controller():
     try:
         data = request.json
 
-        items = data.get("items")
-        total = data.get("total")
+        items = data.get("items", [])
 
-        if not items or total is None:
+        if not items:
             return jsonify({"message": "Invalid order"}), 400
 
         user_id = get_jwt_identity()
 
-        # ✅ OPTIONAL: clean items (safe insert)
+        # 🔥 CALCULATE TOTAL SAFELY
+        total_amount = 0
+
         clean_items = []
         for item in items:
+            price = float(item.get("price", 0))
+            qty = int(item.get("quantity", 1))
+
+            total_amount += price * qty
+
             clean_items.append({
-                "product_id": item.get("_id"),  # store as string
+                "product_id": item.get("_id"),
                 "name": item.get("name"),
-                "price": item.get("price"),
-                "quantity": item.get("quantity"),
+                "price": price,
+                "quantity": qty,
                 "image": item.get("image"),
             })
 
+        # 💳 CREATE RAZORPAY ORDER
+        razorpay_order = client.order.create({
+            "amount": int(total_amount * 100),
+            "currency": "INR",
+            "payment_capture": 1
+        })
+
+        print("RAZORPAY RESPONSE:", razorpay_order)
+
+        order_id = razorpay_order.get("id")
+        amount = razorpay_order.get("amount")
+        currency = razorpay_order.get("currency")
+
+        # 🚨 SAFE CHECK
+        if not order_id:
+            return jsonify({
+                "error": "Razorpay order creation failed",
+                "raw": razorpay_order
+            }), 500
+
+        # 💾 SAVE ORDER IN DB (PENDING)
         order_data = {
             "user_id": user_id,
             "items": clean_items,
-            "total": total
+            "total": total_amount,
+            "status": "pending",
+            "razorpay_order_id": order_id,
+            "created_at": datetime.utcnow()
         }
 
         create_order(order_data)
 
-        return jsonify({"message": "Order placed"}), 201
+        return jsonify({
+            "order_id": order_id,
+            "amount": amount,
+            "currency": currency
+        }), 200
 
     except Exception as e:
-        print("ERROR:", e)   # 🔥 THIS WILL SHOW REAL ERROR
+        print("ERROR:", str(e))
         return jsonify({"message": "Server error"}), 500
 
 
@@ -127,3 +222,5 @@ def get_all_orders_controller():
     except Exception as e:
         print("🔥 ERROR:", e)
         return jsonify({"error": str(e)}), 500
+    
+   

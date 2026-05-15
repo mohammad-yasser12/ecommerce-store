@@ -1,197 +1,150 @@
-import { useSelector, useDispatch } from "react-redux";
-import { clearCart } from "../../redux/cartSlice";
+import { useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import API from "../../api/axios";
 
 function Checkout() {
   const cartItems = useSelector((state) => state.cart.cartItems);
-  console.log(cartItems,"<<< checkout items");
-  
 
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ Buy Now Product
+  // Buy Now product OR cart
   const buyNowProduct = location.state?.product;
 
-  // ✅ If Buy Now → single product
-  // ✅ Else → cart items
   const checkoutItems = buyNowProduct
     ? [{ ...buyNowProduct, quantity: 1 }]
     : cartItems;
 
-  // ✅ Total Price
-  // const total = checkoutItems.reduce(
-  //   (acc, item) => acc + item.price * item.quantity,
-  //   0
-  // );
+  // =========================
+  // PRICE CALCULATION
+  // =========================
 
-  // 💳 Payment Handler
-  const handlePayment = async () => {
-    try {
-      const token = localStorage.getItem("token");
+  const subtotal = checkoutItems.reduce((acc, item) => {
+    const price = item?.product?.price ?? item?.price ?? 0;
+    const qty = item?.quantity ?? 1;
+    return acc + price * qty;
+  }, 0);
 
-      // 1️⃣ Create Razorpay Order
-      const { data: order } = await API.post(
-        "/payment/create-order",
-        { amount: total },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+  const totalDiscount = checkoutItems.reduce((acc, item) => {
+    const price = item?.product?.price ?? item?.price ?? 0;
+    const qty = item?.quantity ?? 1;
+    const itemTotal = price * qty;
 
-      // 2️⃣ Razorpay Options
-      const options = {
-        key: "rzp_test_xxxxxxxx", // Replace with your Razorpay KEY ID
-        amount: order.amount,
-        currency: order.currency,
-        name: "My Store",
-        description: "Order Payment",
-        order_id: order.id,
+    let discount = 0;
 
-        handler: async function (response) {
-          try {
-            // 3️⃣ Verify Payment
-            await API.post(
-              "/payment/verify",
-              {
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              },
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
-
-            alert("Payment Successful ✅");
-
-            // ✅ Clear cart ONLY for cart checkout
-            if (!buyNowProduct) {
-              dispatch(clearCart());
-            }
-
-            navigate("/orders");
-          } catch (err) {
-            console.log(err);
-            alert("Payment verification failed ❌");
-          }
-        },
-
-        theme: {
-          color: "#3399cc",
-        },
-      };
-
-      // 4️⃣ Open Razorpay
-      const razor = new window.Razorpay(options);
-      razor.open();
-    } catch (err) {
-      console.log(err);
-      alert("Payment failed ❌");
+    if (item?.type === "percentage") {
+      discount = (itemTotal * item.value) / 100;
     }
-  };
 
-let subtotal = 0;
-let totalDiscount = 0;
+    if (item?.type === "fixed") {
+      discount = item.value;
+    }
 
-checkoutItems.forEach((item) => {
-  const price =
-    item?.product?.price ??
-    item?.price ??
-    0;
+    return acc + discount;
+  }, 0);
 
-  const quantity = item?.quantity ?? 1;
+  const deliveryCharge = subtotal > 1000 ? 0 : 50;
+  const codCharge = 0;
 
-  const itemTotal = price * quantity;
+  const total = subtotal - totalDiscount + deliveryCharge + codCharge;
 
-  const promo = item;
+  // =========================
+  // PAYMENT HANDLER
+  // =========================
 
-  let discount = 0;
+const handlePayment = async () => {
+  try {
+    const res = await API.post("/payment/create-order", {
+      items: checkoutItems,
+      total: total
+    });
 
-  if (promo?.type === "percentage") {
-    discount = (itemTotal * promo.value) / 100;
+    const order = res.data;
+
+    console.log("RAZORPAY ORDER:", order);
+const options = {
+  key: "rzp_test_SpOmHpylMMkkWY",  // 🔥 SAME AS BACKEND
+  amount: order.amount,
+  currency: order.currency,
+  order_id: order.order_id,
+
+  name: "My Store",
+  description: "Order Payment",
+
+  handler: async function (response) {
+    console.log("PAYMENT RESPONSE:", response);
+
+    await API.post("/payment/verify", {
+      razorpay_order_id: response.razorpay_order_id,
+      razorpay_payment_id: response.razorpay_payment_id,
+      razorpay_signature: response.razorpay_signature,
+    });
+  },
+
+  theme: {
+    color: "#3399cc"
   }
+};
 
-  if (promo?.type === "fixed") {
-    discount = promo.value;
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+
+  } catch (err) {
+    console.log("Payment error:", err);
   }
-
-  subtotal += itemTotal;
-  totalDiscount += discount;
-});
-
-const deliveryCharge = subtotal > 1000 ? 0 : 50;
-const codCharge = 0;
-
-const total =
-  subtotal - totalDiscount + deliveryCharge + codCharge;
+};
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      
+
       <button
         onClick={() => navigate("/cart")}
         className="mb-4 text-blue-500 hover:underline"
       >
-        ← Back to Cart
+        ← Back
       </button>
 
-      <h1 className="text-2xl font-bold mb-6">
-        Checkout 💳
-      </h1>
+      <h1 className="text-2xl font-bold mb-6">Checkout 💳</h1>
 
-      {/* ORDER SUMMARY */}
-<div className="mt-3 space-y-1 text-sm">
+      {/* SUMMARY */}
+      <div className="bg-white p-4 rounded-xl shadow space-y-2 text-sm">
 
-  <div className="flex justify-between">
-    <span>Subtotal</span>
-    <span>₹ {subtotal}</span>
-  </div>
+        <div className="flex justify-between">
+          <span>Subtotal</span>
+          <span>₹ {subtotal}</span>
+        </div>
 
-  <div className="flex justify-between text-green-600">
-    <span>Discount</span>
-    <span>- ₹ {totalDiscount}</span>
-  </div>
+        <div className="flex justify-between text-green-600">
+          <span>Discount</span>
+          <span>- ₹ {totalDiscount}</span>
+        </div>
 
-  <div className="flex justify-between">
-    <span>Delivery Charge</span>
-    <span>₹ {deliveryCharge}</span>
-  </div>
+        <div className="flex justify-between">
+          <span>Delivery</span>
+          <span>₹ {deliveryCharge}</span>
+        </div>
 
-  <div className="flex justify-between">
-    <span>COD Charge</span>
-    <span>₹ {codCharge}</span>
-  </div>
+        <div className="flex justify-between">
+          <span>COD</span>
+          <span>₹ {codCharge}</span>
+        </div>
 
-  <hr />
+        <hr />
 
-  <div className="flex justify-between font-bold">
-    <span>Total Payable</span>
-    <span>₹ {total}</span>
-  </div>
-
-</div>
-      {/* PAYMENT */}
-      <div className="bg-white p-4 rounded-xl shadow mb-4">
-        <h2 className="font-bold mb-3">
-          Payment Method
-        </h2>
-
-        <p className="text-gray-500">
-          Secure payment via Razorpay 💳
-        </p>
+        <div className="flex justify-between font-bold text-lg">
+          <span>Total</span>
+          <span>₹ {total}</span>
+        </div>
       </div>
 
-      {/* PAY BUTTON */}
+      {/* PAYMENT */}
+      <div className="bg-white p-4 mt-4 rounded-xl shadow">
+        <p className="text-gray-600">Pay securely via Razorpay</p>
+      </div>
+
       <button
         onClick={handlePayment}
-        className="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600"
+        className="w-full mt-4 bg-green-500 text-white py-3 rounded-lg hover:bg-green-600"
       >
         Pay Now 💳
       </button>
