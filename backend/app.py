@@ -10,6 +10,7 @@ from routes.promotion_routes import promotion_routes
 
 
 
+
 from flask_cors import CORS
 import os
 from flask import send_from_directory
@@ -52,6 +53,7 @@ app.register_blueprint(cart_routes, url_prefix="/api")
 app.register_blueprint(wishlist_routes, url_prefix="/api")
 app.register_blueprint(admin_routes, url_prefix="/api")
 app.register_blueprint(promotion_routes, url_prefix="/api")
+
 
 
 app.register_blueprint(payment_routes, url_prefix="/api")

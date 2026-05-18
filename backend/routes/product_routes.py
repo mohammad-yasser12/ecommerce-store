@@ -1,9 +1,11 @@
 from flask import Blueprint
 
+
 from controllers.product_controller import (
     create_product_controller,
     get_categories_controller,
-    get_products_controller
+    get_products_controller,
+    get_products_by_category_controller
 )
 
 from controllers.admin_controller import (
@@ -57,3 +59,9 @@ def update_product(product_id):
 @admin_required
 def delete_product(product_id):
     return delete_product_controller(product_id)
+from flask import Blueprint, jsonify
+
+@product_routes.route("/products/category/<category>", methods=["GET"])
+def get_products_by_category(category):
+    data = get_products_by_category_controller(category)
+    return jsonify(data), 200

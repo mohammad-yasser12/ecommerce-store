@@ -18,6 +18,8 @@ import Offers from "./pages/user/Offers";
 import UserWishlists from "./pages/user/UserWhishlists";
 import UserHome from "./pages/user/UserHome";
 import LandingPage from "./pages/user/LandingPage";
+import Layout from "./layout/Layout";
+import CategoryPage from "./pages/user/CategoryPage";
 
 
 
@@ -27,7 +29,7 @@ function App() {
   return (
     <BrowserRouter>
      <Routes>
-
+  
   {/* Default */}
 <Route path="/" element={<LandingPage />} />
 
@@ -44,6 +46,9 @@ function App() {
   <Route path="/wishlist" element={<UserWishlists />} />
   <Route path="/home" element={<UserHome />} /> 
   <Route path="/" element={<LandingPage />} />
+  <Route path="/category/:categoryName" element={<CategoryPage />} />
+ 
+    <Route element={<Layout />}></Route>
 <Route
   path="/admin/wishlist-stats"
   element={

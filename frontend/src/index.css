@@ -46,3 +46,6 @@
 .animate-zoomIn {
   animation: zoomIn 0.3s ease;
 }
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

@@ -76,6 +76,7 @@ const openEdit = (product) => {
     brand: product.brand,
     price: product.price,
     description: product.description,
+    category: product.category, 
   });
 };
 
@@ -256,6 +257,15 @@ const openEdit = (product) => {
         }
         placeholder="Brand"
       />
+
+      <input
+  className="border p-2 w-full mb-2"
+  value={formData.category || ""}
+  onChange={(e) =>
+    setFormData({ ...formData, category: e.target.value })
+  }
+  placeholder="Category"
+/>
 
       <input
         className="border p-2 w-full mb-2"

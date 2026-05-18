@@ -69,7 +69,9 @@ def update_product_controller(product_id):
         "brand": data.get("brand"),
         "price": float(data.get("price", 0)),
         "description": data.get("description"),
+        "category": data.get("category"),
         "updatedAt": datetime.utcnow()
+        
     }
 
     products_collection.update_one(

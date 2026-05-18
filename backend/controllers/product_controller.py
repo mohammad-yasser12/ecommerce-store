@@ -6,8 +6,13 @@ from models.product_model import create_product, get_products
 from config.db import products_collection
 from config.db import promotions_collection
 
-# ✅ GET PRODUCTS
 
+from flask import Blueprint, jsonify
+
+
+product = Blueprint("product", __name__)
+
+# ✅ GET PRODUCTS
 
 
 
@@ -27,8 +32,11 @@ def get_products_controller():
             ]
 
         # 📦 CATEGORY FILTER
-        if category:
-            query["category"] = category
+        if category and category != "All":
+            query["category"] = {
+                "$regex": f"^{category}$",
+                "$options": "i"
+            }
 
         # 📊 SORT
         sort_query = None
@@ -124,3 +132,20 @@ def apply_promotion(product):
             product["final_price"] = product["price"] - promo["value"]
 
     return product
+
+
+
+def get_products_by_category_controller(category):
+    try:
+        products = list(products_collection.find({
+            "category": category
+        }))
+
+        for p in products:
+            p["_id"] = str(p["_id"])
+
+        return products   # ONLY return data
+
+    except Exception as e:
+        print("Error:", e)
+        return []

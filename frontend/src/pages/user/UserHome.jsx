@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import API from "../../api/axios";
 import { useNavigate } from "react-router-dom";
+import CategoryNavbar from "../../components/CategoryNavbar";
 
 function UserHome() {
   const [products, setProducts] = useState([]);
@@ -28,6 +29,11 @@ setProducts(res.data);
         <button onClick={() => navigate("/products")} className="mb-4 text-blue-500 hover:underline">
           back
         </button>
+         <div>
+      <CategoryNavbar />
+
+      {/* Rest of page */}
+    </div>
 
       {/* HEADER */}
       <h1 className="text-3xl font-bold mb-6">
@@ -35,87 +41,61 @@ setProducts(res.data);
       </h1>
 
       {/* PRODUCTS */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-
-{products.map((p) => (
-  <div key={p._id} className="bg-white p-4 rounded-ml shadow">
-
-    <img
-      src={`http://localhost:5000${p.product.image}`}
-      className="w-100 h-40 object-cover rounded"
-      onClick={() => setSelectedProduct(p.product)}
-    />
-
-    <h2 className="font-bold mt-2">
-      {p.product.name}
-    </h2>
-
-    <p className="text-green-600 font-bold">
-      🎁 {p.title} - {p.discount}% OFF
-    </p>
-
-    <p className="text-gray-500 line-through">
-      ₹ {p.product.price}
-    </p>
-
-    <p className="text-black font-bold">
-      ₹ {p.product.price - (p.product.price * p.discount / 100)}
-    </p>
-
-    <div className="flex gap-2 mt-3">
-
-     <button
-  onClick={() => setSelectedProduct(p.product)}
-  className="bg-blue-500 text-white px-3 py-1 rounded"
->
-  View
-</button>
-
-      <button
-        onClick={() =>
-          navigate("/checkout", {
-            state: { product: p.product },
-          })
-        }
-        className="bg-green-500 text-white px-3 py-1 rounded"
+<div className="overflow-x-auto scrollbar-hide">
+  <div className="flex gap-6 px-2 py-4 snap-x snap-mandatory">
+    
+    {products.map((p) => (
+      <div
+        key={p._id}
+        className="min-w-[220px] bg-white p-4 rounded-lg shadow snap-start flex-shrink-0"
       >
-        Buy Now
-      </button>
+        <img
+          src={`http://localhost:5000${p.product.image}`}
+          className="w-full h-40 object-cover rounded cursor-pointer"
+          onClick={() => setSelectedProduct(p.product)}
+        />
 
-    </div>
+        <h2 className="font-bold mt-2">
+          {p.product.name}
+        </h2>
 
-  </div>
-))}
+        <p className="text-green-600 font-bold">
+          🎁 {p.title} - {p.discount}% OFF
+        </p>
 
-{selectedProduct && (
-  <div
-    onClick={() => setSelectedProduct(null)}
-    className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
-  >
+        <p className="text-gray-500 line-through">
+          ₹ {p.product.price}
+        </p>
 
-    <div
-      onClick={(e) => e.stopPropagation()}
-      className="bg-white p-4 rounded-xl max-w-md w-full animate-zoomIn"
-    >
+        <p className="text-black font-bold">
+          ₹ {p.product.price - (p.product.price * p.discount / 100)}
+        </p>
 
-      <img
-        src={`http://localhost:5000${selectedProduct.image}`}
-        className="w-full h-100 object-cover rounded-lg"
+        <div className="flex gap-2 mt-3">
           
-      />
+          <button
+            onClick={() => setSelectedProduct(p.product)}
+            className="bg-blue-500 text-white px-3 py-1 rounded"
+          >
+            View
+          </button>
 
-      <h2 className="text-xl font-bold mt-3">
-        {selectedProduct.name}
-      </h2>
+          <button
+            onClick={() =>
+              navigate("/checkout", {
+                state: { product: p.product },
+              })
+            }
+            className="bg-green-500 text-white px-3 py-1 rounded"
+          >
+            Buy Now
+          </button>
 
-      <p className="text-gray-600">
-        ₹ {selectedProduct.price}
-      </p>
-
-    </div>
-  </div>
-)}
+        </div>
       </div>
+    ))}
+  </div>
+</div>
 
     </div>
   );
