@@ -45,10 +45,12 @@ function Orders() {
         <div className="space-y-4">
 
           {orders.map((order) => (
+            
             <div
               key={order._id}
               className="bg-white p-4 rounded-xl shadow"
             >
+              
               <h2 className="font-bold mb-2">
                 Order ID: {order._id}
               </h2>
@@ -60,12 +62,14 @@ function Orders() {
               {/* Items */}
               <div className="space-y-2">
                 {order.items.map((item, index) => (
+                  
                   <div
                     key={index}
                     className="flex justify-between border-b pb-1"
                   >
                     <span>{item.name}</span>
                     <span>x{item.quantity}</span>
+                    
                   </div>
                 ))}
               </div>

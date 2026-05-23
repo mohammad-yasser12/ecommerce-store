@@ -202,3 +202,45 @@ def get_checkout_product_controller(product_id):
     product = apply_promotion(product)
 
     return jsonify(product), 200
+
+def delete_promotion_controller(id):
+
+    result = promotions_collection.delete_one({
+        "_id": ObjectId(id)
+    })
+
+    if result.deleted_count == 0:
+        return jsonify({
+            "message": "Promotion not found"
+        }), 404
+
+    return jsonify({
+        "message": "Promotion deleted"
+    }), 200
+
+def update_promotion_controller(id):
+
+    data = request.json
+
+    update_data = {
+        "title": data["title"],
+        "type": data["type"],
+        "value": float(data["value"]),
+        "product_id": data["product_id"],
+        "start_date": data["start_date"],
+        "end_date": data["end_date"],
+    }
+
+    result = promotions_collection.update_one(
+        {"_id": ObjectId(id)},
+        {"$set": update_data}
+    )
+
+    if result.matched_count == 0:
+        return jsonify({
+            "message": "Promotion not found"
+        }), 404
+
+    return jsonify({
+        "message": "Promotion updated"
+    }), 200

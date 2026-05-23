@@ -6,7 +6,9 @@ from controllers.promotion_controller import (
     create_promotion_controller,
     get_promotions_controller,
     get_active_promotions_controller,
-    get_checkout_product_controller
+    get_checkout_product_controller,
+    delete_promotion_controller,
+    update_promotion_controller
 )
 
 promotion_routes = Blueprint("promotion_routes", __name__)
@@ -26,7 +28,19 @@ def create_promotion():
 def get_promotions():
     return get_promotions_controller()
 
+# ///////////////////////////////////
 
+
+@promotion_routes.route("/promotions/<id>", methods=["DELETE"])
+@jwt_required()
+def delete_promotion(id):
+    return delete_promotion_controller(id)
+
+
+@promotion_routes.route("/promotions/<id>", methods=["PUT"])
+@jwt_required()
+def update_promotion(id):
+    return update_promotion_controller(id)
 # =========================
 # USER ROUTES
 # =========================
