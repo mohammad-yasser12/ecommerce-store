@@ -1,56 +1,66 @@
 import { useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useState,useMemo} from "react";  
 import API from "../../api/axios";
 
 function Checkout() {
-  const cartItems = useSelector((state) => state.cart.cartItems);
+   const location = useLocation();
+ const [checkoutItems, setCheckoutItems] = useState(
+  location.state?.checkoutItems || []
+);
+
+
 
   const navigate = useNavigate();
-  const location = useLocation();
-
+ 
+const checkoutItemsFromCart = location.state?.checkoutItems || [];
+console.log("Checkout items from location:", checkoutItemsFromCart);
   // Buy Now product OR cart
   const buyNowProduct = location.state?.product;
+  const productId = location.state?.productId;
 
-  const checkoutItems = buyNowProduct
-    ? [{ ...buyNowProduct, quantity: 1 }]
-    : cartItems;
 
-  // =========================
-  // PRICE CALCULATION
-  // =========================
+const product_price = useMemo(() => {
+  if (!checkoutItems.length) return 0;
 
-  const subtotal = checkoutItems.reduce((acc, item) => {
-    const price = item?.product?.price ?? item?.price ?? 0;
+  return checkoutItems.reduce((acc, item) => {
+    const product = item?.product || item;
+    const price = product?.price ?? 0;
     const qty = item?.quantity ?? 1;
+
     return acc + price * qty;
   }, 0);
+}, [checkoutItems]);
 
-  const totalDiscount = checkoutItems.reduce((acc, item) => {
-    const price = item?.product?.price ?? item?.price ?? 0;
+console.log("Product price123:", product_price);
+const promotionDiscount = useMemo(() => {
+  return (checkoutItems || []).reduce((acc, item) => {
+    const product = item?.product || item;
+    const discount = product?.discount ?? 0;
     const qty = item?.quantity ?? 1;
-    const itemTotal = price * qty;
 
-    let discount = 0;
-
-    if (item?.type === "percentage") {
-      discount = (itemTotal * item.value) / 100;
-    }
-
-    if (item?.type === "fixed") {
-      discount = item.value;
-    }
-
-    return acc + discount;
+    return acc + discount * qty;
   }, 0);
+}, [checkoutItems]);
 
-  const deliveryCharge = subtotal > 1000 ? 0 : 50;
-  const codCharge = 0;
+const codCharge = 0;
 
-  const total = subtotal - totalDiscount + deliveryCharge + codCharge;
+const deliveryCharge =  
+  product_price < 2000
+    ? 40
+    : product_price < 10000
+    ? 20
+    : 0;
 
-  // =========================
-  // PAYMENT HANDLER
-  // =========================
+const subtotal = product_price+deliveryCharge ;
+
+const total = useMemo(() => {
+  return product_price - promotionDiscount + deliveryCharge;
+}, [product_price, promotionDiscount, deliveryCharge]);
+
+
+
+
 
 const handlePayment = async () => {
   try {
@@ -94,49 +104,78 @@ const options = {
   }
 };
 
+useEffect(() => {
+  if (productId) {
+    API.get(`/checkout/product/${productId}`).then(res => {
+      setCheckoutItems([{ product: res.data, quantity: 1 }]);
+    });
+  }
+
+  else if (checkoutItemsFromCart) {
+    setCheckoutItems(checkoutItemsFromCart);
+  }
+}, []);
+
+useEffect(() => {
+  const cartItems = location.state?.checkoutItems;
+  const buyNowProduct = location.state?.product;
+
+  if (buyNowProduct) {
+    setCheckoutItems([{ product: buyNowProduct, quantity: 1 }]);
+  } 
+  else if (cartItems?.length > 0) {
+    setCheckoutItems(cartItems);
+  }
+}, []);
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-
-      <button
-        onClick={() => navigate("/cart")}
-        className="mb-4 text-blue-500 hover:underline"
-      >
-        ← Back
-      </button>
+<button
+  onClick={() => navigate(-1)}
+  className="mb-4 text-blue-500 hover:underline"
+>
+  ← Back
+</button>
 
       <h1 className="text-2xl font-bold mb-6">Checkout 💳</h1>
 
       {/* SUMMARY */}
-      <div className="bg-white p-4 rounded-xl shadow space-y-2 text-sm">
+<div className="bg-white p-4 rounded-xl shadow space-y-2 text-sm">
+  <div className="flex justify-between">
 
-        <div className="flex justify-between">
-          <span>Subtotal</span>
-          <span>₹ {subtotal}</span>
-        </div>
+    
+    <span>Product Price</span>
+    <span>₹ {product_price}</span>
+  </div>
 
-        <div className="flex justify-between text-green-600">
-          <span>Discount</span>
-          <span>- ₹ {totalDiscount}</span>
-        </div>
+   <div className="flex justify-between">
+    <span>Delivery</span>
+    <span>₹ {deliveryCharge}</span>
+  </div>
 
-        <div className="flex justify-between">
-          <span>Delivery</span>
-          <span>₹ {deliveryCharge}</span>
-        </div>
+  <div className="flex justify-between font-bold text-ml">
+   
 
-        <div className="flex justify-between">
-          <span>COD</span>
-          <span>₹ {codCharge}</span>
-        </div>
+    <span>Subtotal</span>
+    <span>₹ {subtotal}</span>
+  </div>
 
-        <hr />
 
-        <div className="flex justify-between font-bold text-lg">
-          <span>Total</span>
-          <span>₹ {total}</span>
-        </div>
-      </div>
+ 
 
+  <div className="flex justify-between">
+    <span>Promotion Discount</span>
+    <span>₹ {promotionDiscount}</span>
+  </div>
+
+  <hr />
+
+  <div className="flex justify-between font-bold text-lg">
+    <span>Total</span>
+    <span>₹ {total}</span>
+  </div>
+
+</div>
       {/* PAYMENT */}
       <div className="bg-white p-4 mt-4 rounded-xl shadow">
         <p className="text-gray-600">Pay securely via Razorpay</p>

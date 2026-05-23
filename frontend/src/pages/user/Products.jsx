@@ -182,18 +182,33 @@ const fetchCategories = async () => {
 
       {/* Title */}
       <h1 className="text-2xl font-bold mb-6">Products</h1>
-  {promotions.map((p) => (
-  <div key={p._id} className="bg-yellow-100 p-4 rounded mb-3">
-    <h2 className="font-bold">{p.title}</h2>
-    <p>{p.value}% OFF</p>
+  <div className="flex gap-3 overflow-x-auto">
 
-    <button  
-      onClick={() => navigate("/offers")}
-    className="mt-2 bg-black text-white px-3 py-1 rounded">
-      Shop Now
-    </button>
-  </div>
-))}
+  {promotions.map((p) => (
+    <div
+      key={p._id}
+      className="min-w-[140px] bg-yellow-100 p-3 rounded-xl shadow flex flex-col justify-between"
+    >
+      <div>
+        <h2 className="font-bold text-sm">{p.title}</h2>
+
+        <p className="text-green-600 font-bold text-lg mt-1">
+          {p.type === "percentage"
+            ? `${p.value}% OFF`
+            : `₹${p.value} OFF`}
+        </p>
+      </div>
+
+      <button
+        onClick={() => navigate("/offers")}
+        className="mt-3 bg-black text-white text-xs px-2 py-1 rounded"
+      >
+        Shop Now
+      </button>
+    </div>
+  ))}
+
+</div>
       <div className="flex flex-col md:flex-row gap-4 mb-6">
 
   {/* SEARCH */}

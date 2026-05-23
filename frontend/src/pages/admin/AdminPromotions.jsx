@@ -6,9 +6,11 @@ function AdminPromotions() {
   const [promotions, setPromotions] = useState([]);
   const [products, setProducts] = useState([]);
   const [productSearch, setProductSearch] = useState("");
-const [productList, setProductList] = useState([]);
-const [showDropdown, setShowDropdown] = useState(false);
-const [selectedProduct, setSelectedProduct] = useState(null);
+  const [productList, setProductList] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [errors, setErrors] = useState({});
+  
   const [formData, setFormData] = useState({
     title: "",
     type: "percentage",
@@ -29,15 +31,45 @@ const [selectedProduct, setSelectedProduct] = useState(null);
   };
 
   // 🔥 FETCH PRODUCTS
-const fetchProducts = async (query) => {
-  try {
-    const res = await API.get(`/products?search=${query}`);
-    setProductList(res.data || []);
-  } catch (err) {
-    console.log(err);
-  }
-};
+  const fetchProducts = async (query) => {
+    try {
+      const res = await API.get(`/products?search=${query}`);
+      setProductList(res.data || []);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
+
+  const validateForm = () => {
+  const newErrors = {};
+
+  if (!formData.title) newErrors.title = "Title is required";
+
+  if (formData.type === "none")
+    newErrors.type = "Select promotion type";
+
+  if (!formData.value)
+    newErrors.value = "Value is required";
+
+  if (!formData.product_id)
+    newErrors.product_id = "Select a product";
+
+  if (!formData.start_date)
+    newErrors.start_date = "Start date required";
+
+  if (!formData.end_date)
+    newErrors.end_date = "End date required";
+
+  if (formData.start_date && formData.end_date &&
+      formData.end_date < formData.start_date) {
+    newErrors.end_date = "End date must be after start date";
+  }
+
+  setErrors(newErrors);
+
+  return Object.keys(newErrors).length === 0;
+};
   // 🔥 CREATE PROMOTION
   const createPromotion = async () => {
     try {
@@ -68,18 +100,18 @@ const fetchProducts = async (query) => {
     fetchProducts();
   }, []);
 
- useEffect(() => {
-  if (!productSearch) {
-    setProductList([]);
-    return;
-  }
+  useEffect(() => {
+    if (!productSearch) {
+      setProductList([]);
+      return;
+    }
 
-  const delay = setTimeout(() => {
-    fetchProducts(productSearch);
-  }, 300);
+    const delay = setTimeout(() => {
+      fetchProducts(productSearch);
+    }, 300);
 
-  return () => clearTimeout(delay);
-}, [productSearch]);
+    return () => clearTimeout(delay);
+  }, [productSearch]);
   return (
     <div className="min-h-screen bg-gray-100 p-6">
 
@@ -110,7 +142,11 @@ const fetchProducts = async (query) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
           {/* TITLE */}
-          <input
+          <div className="flex flex-col gap-2">
+            <label className="font-semibold">
+              Promotion Title
+            </label>
+             <input
             type="text"
             placeholder="Promotion Title"
             value={formData.title}
@@ -122,9 +158,16 @@ const fetchProducts = async (query) => {
             }
             className="border p-3 rounded-lg"
           />
+          </div>
+         
 
           {/* TYPE */}
-          <select
+            <div className="flex flex-col gap-2">
+            <label className="font-semibold">
+              Promotion Value Type
+            </label>
+
+             <select
             value={formData.type}
             onChange={(e) =>
               setFormData({
@@ -142,11 +185,18 @@ const fetchProducts = async (query) => {
               Fixed Discount
             </option>
           </select>
+            </div>
+
+         
 
           {/* VALUE */}
-          <input
+            <div className="flex flex-col gap-2">
+            <label className="font-semibold">
+            Promotion Value
+            </label>
+             <input
             type="number"
-            placeholder="Discount Value"
+            placeholder="Promotion Value"
             value={formData.value}
             onChange={(e) =>
               setFormData({
@@ -156,90 +206,171 @@ const fetchProducts = async (query) => {
             }
             className="border p-3 rounded-lg"
           />
+            </div>
+         
 
           {/* PRODUCT */}
-         <div className="relative">
+          <div className="relative w-full mt-2 ">
+             <label className="font-semibold ">
+              Promotion Product
+            </label>
 
-<input
-  type="text"
-  placeholder="Search product..."
-  value={productSearch}
-  onChange={(e) => {
-    setProductSearch(e.target.value);
-    setShowDropdown(true);
-  }}
-  onFocus={() => setShowDropdown(true)}
-  className="border p-3 rounded-lg w-full"
-/>
-{showDropdown && productSearch && (
-  <div className="absolute z-10 bg-white border w-full max-h-60 overflow-auto shadow-lg rounded">
+            <input
+              type="text"
+              placeholder="Search product..."
+              value={productSearch}
+              onChange={(e) => {
+                setProductSearch(e.target.value);
+                setShowDropdown(true);
+              }}
+              onFocus={() => setShowDropdown(true)}
+              className="border p-3 rounded-lg w-full"
+            />
 
-    {productList.length === 0 ? (
-      <div className="p-2 text-gray-500">
-        No products found
-      </div>
-    ) : (
-      productList.map((product) => (
-        <div
-          key={product._id}
-       onClick={() => {
-  setSelectedProduct(product);
+            {showDropdown && productSearch && (
+              <div className="absolute z-10 bg-white border w-full max-h-72 overflow-auto shadow-lg rounded-xl">
 
-  setFormData({
-    ...formData,
-    product_id: product._id,
-  });
+                {productList.length === 0 ? (
 
-  setProductSearch(product.name);
-  setShowDropdown(false);
-}}
-          className="p-2 hover:bg-gray-100 cursor-pointer"
-        >
-          {product.name}
-        </div>
-      ))
-    )}
+                  <div className="p-3 text-gray-500">
+                    No products found
+                  </div>
 
-  </div>
-)}
-</div>
+                ) : (
+
+                  productList.map((product) => (
+
+                    <div
+                      key={product._id}
+                      onClick={() => {
+                        setSelectedProduct(product);
+
+                        setFormData({
+                          ...formData,
+                          product_id: product._id,
+                        });
+
+                        setProductSearch(product.name);
+                        setShowDropdown(false);
+                      }}
+                      className="flex items-center gap-3 p-3 hover:bg-gray-100 cursor-pointer border-b"
+                    >
+
+                      {/* Product Image */}
+                      <img
+                        src={`http://localhost:5000${product.image}`}
+                        alt={product.name}
+                        className="w-12 h-12 rounded object-cover"
+                      />
+
+                      {/* Product Info */}
+                      <div className="flex-1">
+
+                        <p className="font-semibold text-sm">
+                          {product.name}
+                        </p>
+
+                        <p className="text-xs text-gray-500">
+                          ID: {product._id}
+                        </p>
+
+                        <p className="text-xs text-green-600">
+                          ₹ {product.price}
+                        </p>
+
+                      </div>
+
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+          </div>
 
           {/* START DATE */}
-          <input
-            type="date"
-            value={formData.start_date}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                start_date: e.target.value,
-              })
-            }
-            className="border p-3 rounded-lg"
-          />
 
-          {/* END DATE */}
-          <input
-            type="date"
-            value={formData.end_date}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                end_date: e.target.value,
-              })
-            }
-            className="border p-3 rounded-lg"
-          />
+
+          <div className="flex flex-col gap-2">
+
+            <label className="font-semibold">
+              Start Date
+            </label>
+
+            <input
+              type="date"
+              min={new Date().toISOString().split("T")[0]}
+              value={formData.start_date}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  start_date: e.target.value,
+                })
+              }
+              className="border p-3 rounded-lg"
+            />
+
+          </div>
+
+          <div className="flex flex-col gap-2">
+
+            <label className="font-semibold">
+              End Date
+            </label>
+
+            <input
+              type="date"
+              value={formData.end_date}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  end_date: e.target.value,
+                })
+              }
+              className="border p-3 rounded-lg"
+            />
+
+          </div>
+
+
 
         </div>
 
         {/* BUTTON */}
-        <button
-          onClick={createPromotion}
-          className="mt-5 bg-blue-500 hover:bg-blue-600 text-white px-5 py-3 rounded-lg transition"
-        >
-          Create Promotion
-        </button>
+      <div className="flex gap-3 mt-5">
 
+ <button
+  onClick={() => {
+    if (!validateForm()) return;
+    createPromotion();
+  }}
+  className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-3 rounded-lg transition"
+>
+  Create Promotion
+</button>
+
+ <button
+  onClick={() => {
+    setFormData({
+      title: "",
+      type: "none",
+      value: "",
+      product_id: "",
+      start_date: "",
+      end_date: "",
+    });
+
+    setSelectedProduct(null);
+setProductSearch("");
+    // ✅ also clear errors
+    setErrors({});
+  }}
+  className="bg-gray-500 hover:bg-gray-600 text-white px-5 py-3 rounded-lg transition"
+>
+  Clear
+</button>
+
+</div>
       </div>
 
       {/* PROMOTION LIST */}
@@ -294,11 +425,10 @@ const fetchProducts = async (query) => {
 
                 <div className="mt-3">
                   <span
-                    className={`px-3 py-1 rounded-full text-sm ${
-                      promo.is_active
+                    className={`px-3 py-1 rounded-full text-sm ${promo.is_active
                         ? "bg-green-100 text-green-600"
                         : "bg-red-100 text-red-600"
-                    }`}
+                      }`}
                   >
                     {promo.is_active
                       ? "Active"

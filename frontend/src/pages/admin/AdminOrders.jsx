@@ -82,6 +82,17 @@ setPage(res.data.page || 1);
           <option value="total_desc">Price High → Low</option>
         </select>
 
+        <button
+          onClick={() => {
+            setSearchUser("");
+            setSort("");
+            setPage(1);
+          }}
+          className="ml-4 px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400"
+        >
+         Reset
+        </button>   
+
       </div>
 
       {/* TABLE */}

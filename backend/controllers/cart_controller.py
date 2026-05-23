@@ -2,6 +2,8 @@
 
 from flask import request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from controllers.promotion_controller import apply_promotion
+from config.db import products_collection, promotions_collection
 from models.cart_model import *
 
 @jwt_required()
@@ -10,10 +12,29 @@ def get_cart_controller():
 
     cart = get_cart_by_user(user_id)
 
+    result = []
+
     for item in cart:
         item["_id"] = str(item["_id"])
 
-    return jsonify(cart), 200
+        # 🔥 GET PRODUCT
+        product = products_collection.find_one({
+            "_id": ObjectId(item["product_id"])
+        })
+
+        if product:
+            product["_id"] = str(product["_id"])
+
+            # 🔥 APPLY PROMOTION
+            product = apply_promotion(product)
+
+            item["product"] = product
+        else:
+            item["product"] = None
+
+        result.append(item)
+
+    return jsonify(result), 200
 
 
 @jwt_required()

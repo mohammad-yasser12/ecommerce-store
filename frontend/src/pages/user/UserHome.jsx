@@ -80,16 +80,16 @@ setProducts(res.data);
             View
           </button>
 
-          <button
-            onClick={() =>
-              navigate("/checkout", {
-                state: { product: p.product },
-              })
-            }
-            className="bg-green-500 text-white px-3 py-1 rounded"
-          >
-            Buy Now
-          </button>
+                <button 
+  onClick={() => {
+    navigate("/checkout", {
+      state: { productId: p.product._id },
+    });
+  }}
+   className="bg-green-500 text-white px-3 py-1 rounded"
+>
+  Buy now
+</button>
 
         </div>
       </div>

@@ -169,13 +169,18 @@ const handleRemove = async (id) => {
                     </div>
 
                     {/* Checkout */}
-                    <button
-                        onClick={() => navigate("/checkout")}
-                        className="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600"
-                    >
-                        Proceed to Checkout 💳
-                    </button>
-
+                   <button
+  onClick={() =>
+    navigate("/checkout", {
+      state: {
+        checkoutItems: cart,
+      },
+    })
+  }
+  className="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600"
+>
+  Proceed to Checkout 💳
+</button>
                 </div>
             )}
         </div>

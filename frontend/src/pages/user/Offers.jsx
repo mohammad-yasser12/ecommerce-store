@@ -106,8 +106,10 @@ function Offers() {
 
               {/* DISCOUNT */}
               <p className="text-green-600 font-bold mt-2">
-                {p.value}% OFF
-              </p>
+  {p.type === "percentage"
+    ? `${p.value}% OFF`
+    : `₹${p.value} OFF`}
+</p>
 
               {/* DATES */}
               <p className="text-xs text-gray-400 mt-1">
@@ -128,13 +130,13 @@ function Offers() {
               >
                 Add to Cart 🛒
               </button>
-             <button
+           <button 
   onClick={() => {
     navigate("/checkout", {
-      state: { product: p.product },
+      state: { productId: p.product._id },
     });
   }}
-  className="w-full mt-3 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+   className="w-full mt-3 py-2 bg-green-500 text-white rounded hover:bg-green-600"
 >
   Buy now
 </button>
